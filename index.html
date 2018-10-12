@@ -12,24 +12,27 @@
             //二维数组--储存方块的状态(true有效/false空白)
             var fields = []
 
-            //储存目标点的数组
+            //定义储存目标点的数组
             var this_lefts = []
             var this_rights = []
             var this_ups = []
             var this_downs = []
 
             //计算目标点
-            var initTargetPoint = function(this_row, this_col){
+            function initTargetPoint(this_row, this_col){
                 this_lefts = []
                 this_rights = []
                 this_ups = []
                 this_downs = []
 
                 var step_col = this_col
+                //计算左边
                 while (step_col > 0){
                     step_col -= 1
+                    //非空白方块退出
                     if (fields[this_row][step_col]) break
                     this_lefts.push(this_row+","+step_col)
+                    //例:this_lefts = ["2,2", "2,1", "2,0"]
                 }
                 step_col = this_col
                 while (step_col < max_col){
@@ -53,7 +56,7 @@
 
 
             //重置游戏
-            var reload = function(){
+            function reload(){
                 var $box = $("#box-link")
                 $box.find(".row").remove()
                 fields = []
@@ -63,21 +66,20 @@
                     var str_row = `<div class="row">`
                     for(let col =0;col <= max_col;col++){
                         var str_ele = ""
-                        var _class = row+"_"+col
                         row_lst.push(false)
-                        str_ele = `<div class="step ${_class} step-empty" data-row="${row}" data-col="${col}">${row},${col}</div>`
+                        str_ele = `<div class="step step-empty" data-row="${row}" data-col="${col}">${row},${col}</div>`
                         str_row += str_ele
                     }
                     fields.push(row_lst)
                     str_row += "</div>"
                     $box.append(str_row)
                 }
-
+                //bucket储存选中的方块
                 var bucket = []
                 $(".step").on("click",function(){
                     var row = $(this).data("row")
                     var col = $(this).data("col")
-                    //console.log(fields[row][col])
+                    //点击*红框*的事件
                     if( $(this).hasClass("step-active") ) {
                         $(this).removeClass("step-active")
                         initTargetPoint(row, col)
@@ -89,13 +91,13 @@
                         bucket.pop()
                         return
                     }
-
+                    //点击*灰框*的事件
                     if( $(this).hasClass("step-empty") ) {
                         $(this).removeClass("step-empty")
                         fields[row][col] = true
                         return
                     }
-                    if (bucket.length == 1){
+                    if (bucket.length == 1){ //选中两个点时linkStart()
                         var $old = bucket.pop()
                         $old.removeClass("step-active")
                         
@@ -105,11 +107,7 @@
                         bucket.push($(this))
                         $(this).addClass("step-active")
                     }
-
-                    
-
                 })
-
             }
             reload()
 
@@ -119,7 +117,7 @@
 
 //----------------------------寻路逻辑-------------------------------------------
             //是否相邻
-            var isNear = function(old_row, old_col, this_row, this_col){
+            function isNear(old_row, old_col, this_row, this_col){
                 if (old_col == this_col && Math.abs(old_row - this_row) == 1){
                     return true
                 }
@@ -129,7 +127,10 @@
                 return false
             }
 
-            var rightLink = function(begin_col, end_col, fixed_row){
+            //A点(row, col)-->B点(row, col):
+            //begin_col = A.col  end_col = B.col
+            //fixed_row = A.row
+            function rightLink(begin_col, end_col, fixed_row){
                 console.log("----右")
                 var steps = []
                 var step_col = begin_col
@@ -157,7 +158,7 @@
                 return []
             }
 
-            var downLink = function(begin_row, end_row, fixed_col){
+            function downLink(begin_row, end_row, fixed_col){
                 console.log("----下")
                 var steps = []
                 var step_row = begin_row
@@ -185,7 +186,7 @@
                 return []
             }
 
-            var leftLink = function(begin_col, end_col, fixed_row){
+            function leftLink(begin_col, end_col, fixed_row){
                 console.log("----左")
                 var steps = []
                 var step_col = begin_col
@@ -213,7 +214,7 @@
                 return []
             }
 
-            var upLink = function(begin_row, end_row, fixed_col){
+            function upLink(begin_row, end_row, fixed_col){
                 console.log("----上")
                 var steps = []
                 var step_row = begin_row
@@ -241,7 +242,7 @@
                 return []
             }
 
-            var hideBoth = function($old, $this, steps){
+            function hideBoth($old, $this, steps){
                 console.log(steps.join("-->"))
 
                 var old_row = $old.data("row")
@@ -257,7 +258,7 @@
             }
 
 
-            var linkStart = function($old, $this){
+            function linkStart($old, $this){
                 var old_row = $old.data("row")
                 var old_col = $old.data("col")
                 var this_row = $this.data("row")
@@ -271,24 +272,18 @@
                 }
                 //old-->this, this的目标点
                 initTargetPoint(this_row, this_col)
+
                 //--右--下--左--上--
                 steps = rightLink(old_col, this_col, old_row)
-                if(steps.length > 0) {
-                return hideBoth($old, $this, steps)
-                }
+                if(steps.length > 0) return hideBoth($old, $this, steps)
                 steps = downLink(old_row, this_row, old_col)
-                if (steps.length > 0){
-                return hideBoth($old, $this, steps)
-                }
+                if (steps.length > 0) return hideBoth($old, $this, steps)
                 steps = leftLink(old_col, this_col, old_row)
-                if (steps.length > 0){
-                return hideBoth($old, $this, steps)
-                }
+                if (steps.length > 0) return hideBoth($old, $this, steps)
                 steps = upLink(old_row, this_row, old_col)
-                if (steps.length > 0){
-                return hideBoth($old, $this, steps)
-                }
-                //开始尝试*拐点为2*的连接
+                if (steps.length > 0) return hideBoth($old, $this, steps)
+
+                //开始尝试*折点为2*的连接
                 console.log("--尝试拐点为2的连接--")
                 var steps_sec =[]
                 var step_col = old_col
@@ -375,12 +370,17 @@
     </script>
 </header>
 <body>
-    <div id="box-link" class="box-link">
-
-    </div>
+    <div id="box-link" class="box-link"></div>
 
     <div class="box-btn">
         <div id="btn-reload" class="btn-reload">重置</div>
+    </div>
+    <div class="box-desc">
+        <p>操作说明:</p>
+        <p>点击*灰框*方块使其有效</p>
+        <p>点击*蓝框*方块选中</p>
+        <p>点击*红框*计算目标点</p>
+        <p>*F12*打开调试模式</p>
     </div>
 </body>
 </html>

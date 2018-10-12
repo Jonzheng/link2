@@ -79,3 +79,13 @@ body{
     box-shadow: 0 0 10px rgba(255, 0, 0, 0.795);
     transition: 0.3s ease-in;
 }
+
+.box-desc{
+    position: relative;
+    left: -36%;
+}
+
+p{
+    color: #888;
+    font-size: 13px;
+}
